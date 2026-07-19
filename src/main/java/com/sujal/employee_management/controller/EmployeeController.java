@@ -4,9 +4,8 @@ package com.sujal.employee_management.controller;
 // to allow the controller to compile. Remove this fallback once the
 // proper model package is available on the classpath.
 import org.springframework.web.bind.annotation.*;
-
-
 import java.util.ArrayList;
+import java.util.Iterator;
 import java.util.List;
 
 @RestController
@@ -29,6 +28,14 @@ public class EmployeeController {
                 "Testing",
                 "rahul@gmail.com",
                 55000
+        ));
+
+        employees.add(new Employee(
+                103,
+                "Amit",
+                "Cloud",
+                "amit@gmail.com",
+                60000
         ));
     }
 
@@ -73,6 +80,25 @@ public class EmployeeController {
             }
         }
         return "Employee Not Found";
+    }
+
+    @DeleteMapping("/employees/{id}")
+    public String deleteEmployee(@PathVariable int id) {
+
+    Iterator<Employee> iterator = employees.iterator();
+
+    while (iterator.hasNext()) {
+
+        Employee employee = iterator.next();
+
+        if (employee.getId() == id) {
+
+            iterator.remove();
+
+            return "Employee Deleted Successfully";
+            }
+        }
+       return "Employee Not Found";
     }
 
 
