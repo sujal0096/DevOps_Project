@@ -1,4 +1,4 @@
-package model;
+package com.sujal.employee_management.model;
 
 public class Employee {
 
@@ -8,11 +8,9 @@ public class Employee {
     private String email;
     private double salary;
 
-    // Empty Constructor
     public Employee() {
     }
 
-    // Parameterized Constructor
     public Employee(int id, String name, String department, String email, double salary) {
         this.id = id;
         this.name = name;
@@ -20,8 +18,6 @@ public class Employee {
         this.email = email;
         this.salary = salary;
     }
-
-    // Getters and Setters
 
     public int getId() {
         return id;
