@@ -1,101 +1,71 @@
 package com.sujal.employee_management.service;
 
+import com.sujal.employee_management.exception.EmployeeNotFoundException;
 import com.sujal.employee_management.model.Employee;
+import com.sujal.employee_management.repository.EmployeeRepository;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import com.sujal.employee_management.dto.EmployeeDTO;
 
-import java.util.ArrayList;
-import java.util.Iterator;
 import java.util.List;
 
 @Service
 public class EmployeeService {
 
-    private List<Employee> employees = new ArrayList<>();
+    @Autowired
+    private EmployeeRepository employeeRepository;
 
-    public EmployeeService() {
-
-        employees.add(new Employee(
-                101,
-                "Sujal",
-                "DevOps",
-                "sujal@gmail.com",
-                70000
-        ));
-
-        employees.add(new Employee(
-                102,
-                "Rahul",
-                "Testing",
-                "rahul@gmail.com",
-                55000
-        ));
-
-        employees.add(new Employee(
-                103,
-                "Amit",
-                "Cloud",
-                "amit@gmail.com",
-                60000
-        ));
+    // Get all employees
+    public List<EmployeeDTO> getEmployees() {
+    List<Employee> employees = employeeRepository.findAll();
+            return employees.stream()
+            .map(this::convertToDTO)
+            .toList();
     }
 
-    public List<Employee> getEmployees() {
-        return employees;
+    // Get employee by ID
+    public EmployeeDTO getEmployeeById(int id) {
+    Employee employee = employeeRepository.findById(id)
+            .orElseThrow(() ->
+                    new EmployeeNotFoundException("Employee with ID " + id + " not found"));
+        return convertToDTO(employee);
     }
 
-    public Employee getEmployeeById(int id) {
-
-        for (Employee employee : employees) {
-
-            if (employee.getId() == id) {
-                return employee;
-            }
-        }
-
-        return null;
+    // Add employee
+    public Employee addEmployee(Employee employee) {
+        return employeeRepository.save(employee);
     }
 
-    public String addEmployee(Employee employee) {
+    // Update employee
+    public Employee updateEmployee(int id, Employee updatedEmployee) {
 
-        employees.add(employee);
+    Employee employee = employeeRepository.findById(id)
+            .orElseThrow(() ->
+                    new EmployeeNotFoundException("Employee with ID " + id + " not found"));
 
-        return "Employee Added Successfully";
+        employee.setName(updatedEmployee.getName());
+        employee.setSalary(updatedEmployee.getSalary());
+        employee.setDepartment(updatedEmployee.getDepartment());
+        employee.setEmail(updatedEmployee.getEmail());
+
+        return employeeRepository.save(employee);
     }
 
-    public String updateEmployee(int id, Employee updatedEmployee) {
-
-        for (Employee employee : employees) {
-
-            if (employee.getId() == id) {
-
-                employee.setName(updatedEmployee.getName());
-                employee.setDepartment(updatedEmployee.getDepartment());
-                employee.setEmail(updatedEmployee.getEmail());
-                employee.setSalary(updatedEmployee.getSalary());
-
-                return "Employee Updated Successfully";
-            }
-        }
-
-        return "Employee Not Found";
+    // Delete employee
+    public void deleteEmployee(int id) {
+    Employee employee = employeeRepository.findById(id)
+            .orElseThrow(() ->
+                    new EmployeeNotFoundException("Employee with ID " + id + " not found"));
+        employeeRepository.delete(employee);
     }
 
-    public String deleteEmployee(int id) {
-
-        Iterator<Employee> iterator = employees.iterator();
-
-        while (iterator.hasNext()) {
-
-            Employee employee = iterator.next();
-
-            if (employee.getId() == id) {
-
-                iterator.remove();
-
-                return "Employee Deleted Successfully";
-            }
-        }
-
-        return "Employee Not Found";
+    // Convert Employee entity to EmployeeDTO
+    private EmployeeDTO convertToDTO(Employee employee) {
+    return new EmployeeDTO(
+            employee.getId(),
+            employee.getName(),
+            employee.getDepartment(),
+            employee.getEmail()
+        );
     }
 }
