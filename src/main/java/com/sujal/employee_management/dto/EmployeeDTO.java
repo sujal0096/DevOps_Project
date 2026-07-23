@@ -1,33 +1,20 @@
-package com.sujal.employee_management.model;
+package com.sujal.employee_management.dto;
 
-import jakarta.persistence.Entity;
-import jakarta.persistence.Id;
-import jakarta.persistence.Table;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.GenerationType;
+public class EmployeeDTO {
 
-@Entity
-@Table(name = "employees")
-public class Employee {
-
-    @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
     private int id;
-
     private String name;
     private String department;
     private String email;
-    private double salary;
 
-    public Employee() {
+    public EmployeeDTO() {
     }
 
-    public Employee(int id, String name, String department, String email, double salary) {
+    public EmployeeDTO(int id, String name, String department, String email) {
         this.id = id;
         this.name = name;
         this.department = department;
         this.email = email;
-        this.salary = salary;
     }
 
     public int getId() {
@@ -60,13 +47,5 @@ public class Employee {
 
     public void setEmail(String email) {
         this.email = email;
-    }
-
-    public double getSalary() {
-        return salary;
-    }
-
-    public void setSalary(double salary) {
-        this.salary = salary;
     }
 }
