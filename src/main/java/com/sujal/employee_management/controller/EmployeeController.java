@@ -19,6 +19,11 @@ public class EmployeeController {
         this.employeeService = employeeService;
     }
 
+    @GetMapping("/")
+    public String home() {
+        return "Welcome to Employee Management - Version 2";
+    }
+
     // Get all employees
     @GetMapping("/employees")
     public ResponseEntity<List<EmployeeDTO>> getEmployees() {
