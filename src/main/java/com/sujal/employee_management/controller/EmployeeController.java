@@ -19,7 +19,7 @@ public class EmployeeController {
         this.employeeService = employeeService;
     }
 
-    @GetMapping("/")
+    @GetMapping("/hi")
     public String home() {
         return "Welcome to Employee Management - Version 2";
     }
