@@ -3,7 +3,8 @@ pipeline {
     agent any
 
     environment {
-        DOCKER_USERNAME = 'sujal5210'
+        IMAGE_NAME = "sujal5210/employee-management:latest"
+        SERVER = "vagrant@192.168.56.12"
     }
 
     stages {
@@ -17,9 +18,9 @@ pipeline {
         stage('Build Maven Project') {
             steps {
                 sh '''
-                echo "========================================"
-                echo "Building Maven Project..."
-                echo "========================================"
+                echo "======================================"
+                echo "Building Maven Project"
+                echo "======================================"
 
                 mvn clean package -DskipTests
                 '''
@@ -29,36 +30,39 @@ pipeline {
         stage('Build Docker Image') {
             steps {
                 sh '''
-                echo "========================================"
-                echo "Building Docker Image..."
-                echo "========================================"
+                echo "======================================"
+                echo "Building Docker Image"
+                echo "======================================"
 
-                docker build -t $DOCKER_USERNAME/employee-management:latest .
+                docker build -t $IMAGE_NAME .
                 '''
             }
         }
 
-        stage('Push Image to Docker Hub') {
+        stage('Push Docker Image') {
+
             steps {
 
-                withCredentials([usernamePassword(
-                    credentialsId: 'dockerhub',
-                    usernameVariable: 'DOCKER_USERNAME',
-                    passwordVariable: 'DOCKER_PASSWORD'
-                )]) {
+                withCredentials([
+                    usernamePassword(
+                        credentialsId: 'dockerhub',
+                        usernameVariable: 'DOCKER_USERNAME',
+                        passwordVariable: 'DOCKER_PASSWORD'
+                    )
+                ]) {
 
                     sh '''
-                    echo "========================================"
-                    echo "Logging into Docker Hub..."
-                    echo "========================================"
+                    echo "======================================"
+                    echo "Logging into Docker Hub"
+                    echo "======================================"
 
                     echo "$DOCKER_PASSWORD" | docker login -u "$DOCKER_USERNAME" --password-stdin
 
-                    echo "========================================"
-                    echo "Pushing Docker Image..."
-                    echo "========================================"
+                    echo "======================================"
+                    echo "Pushing Docker Image"
+                    echo "======================================"
 
-                    docker push $DOCKER_USERNAME/employee-management:latest
+                    docker push $IMAGE_NAME
                     '''
                 }
             }
@@ -69,13 +73,12 @@ pipeline {
             steps {
 
                 sh '''
-                echo "========================================"
-                echo "Connecting to Docker Server (web02)..."
-                echo "========================================"
+                echo "======================================"
+                echo "Deploying Application"
+                echo "======================================"
 
-                ssh -o StrictHostKeyChecking=no vagrant@192.168.56.12 << 'EOF'
-
-                echo "Starting PostgreSQL..."
+                ssh -o StrictHostKeyChecking=no $SERVER "
+                docker network create employee-network || true
 
                 docker start postgres || docker run -d \
                   --name postgres \
@@ -85,43 +88,50 @@ pipeline {
                   -e POSTGRES_PASSWORD=postgres \
                   postgres:17
 
-                echo "Pulling latest application image..."
-
-                docker pull sujal5210/employee-management:latest
-
-                echo "Stopping old container..."
+                docker pull $IMAGE_NAME
 
                 docker stop employee-management || true
 
                 docker rm employee-management || true
 
-                echo "Running latest container..."
-
                 docker run -d \
                   --name employee-management \
                   --network employee-network \
                   -p 8080:8080 \
-                  sujal5210/employee-management:latest
-
-                EOF
+                  $IMAGE_NAME
+                "
                 '''
             }
         }
-
     }
 
     post {
 
         success {
-            echo "Application deployed successfully."
+
+            echo '''
+=========================================
+Deployment Successful
+=========================================
+'''
         }
 
         failure {
-            echo "Pipeline failed."
+
+            echo '''
+=========================================
+Pipeline Failed
+=========================================
+'''
         }
 
         always {
-            echo "Pipeline execution completed."
+
+            echo '''
+=========================================
+Pipeline Completed
+=========================================
+'''
         }
     }
 }
