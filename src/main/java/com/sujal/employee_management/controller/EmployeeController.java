@@ -21,7 +21,7 @@ public class EmployeeController {
 
     @GetMapping("/")
     public String home() {
-        return "Welcome to Employee Management - Version 3";
+        return "Welcome to Employee Management - Version 4";
     }
 
     // Get all employees

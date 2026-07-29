@@ -76,51 +76,36 @@ pipeline {
         }
 
         stage('Deploy to Docker Server') {
-            steps {
+        steps {
+        sh """
+        ssh -o StrictHostKeyChecking=no ${DOCKER_SERVER} '
+            cd ~/DevOps_Project
 
-                sh """
-                ssh -o StrictHostKeyChecking=no ${DOCKER_SERVER} '
+            echo "========================================"
+            echo "Pulling latest source code..."
+            echo "========================================"
+            git pull origin main
 
-                echo "========================================"
-                echo "Starting PostgreSQL..."
-                echo "========================================"
+            echo "========================================"
+            echo "Pulling latest Docker image..."
+            echo "========================================"
+            docker compose pull
 
-                docker start postgres || true
+            echo "========================================"
+            echo "Stopping old containers..."
+            echo "========================================"
+            docker compose down
 
-                echo "========================================"
-                echo "Pulling Latest Image..."
-                echo "========================================"
+            echo "========================================"
+            echo "Starting updated containers..."
+            echo "========================================"
+            docker compose up -d
 
-                docker pull ${DOCKER_USERNAME}/${IMAGE_NAME}:latest
-
-                echo "========================================"
-                echo "Stopping Old Container..."
-                echo "========================================"
-
-                docker stop employee-management || true
-
-                echo "========================================"
-                echo "Removing Old Container..."
-                echo "========================================"
-
-                docker rm employee-management || true
-
-                echo "========================================"
-                echo "Starting New Container..."
-                echo "========================================"
-
-                docker run -d \
-                  --name employee-management \
-                  --network employee-network \
-                  -p 8080:8080 \
-                  ${DOCKER_USERNAME}/${IMAGE_NAME}:latest
-
-                echo "========================================"
-                echo "Deployment Successful!"
-                echo "========================================"
-
-                '
-                """
+            echo "========================================"
+            echo "Deployment Successful!"
+            echo "========================================"
+        '
+        """
             }
         }
 
