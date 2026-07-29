@@ -9,7 +9,7 @@ pipeline {
 
     stages {
 
-        stage('Checkout Code') {
+        stage('Checkout Source Code') {
             steps {
                 checkout scm
             }
@@ -19,7 +19,7 @@ pipeline {
             steps {
                 sh '''
                     echo "========================================"
-                    echo "Building Maven Project..."
+                    echo "Building Spring Boot Project..."
                     echo "========================================"
 
                     mvn clean package -DskipTests
@@ -41,14 +41,17 @@ pipeline {
             }
         }
 
-        stage('Login & Push to Docker Hub') {
+        stage('Push Docker Image') {
+
             steps {
 
-                withCredentials([usernamePassword(
-                    credentialsId: 'dockerhub',
-                    usernameVariable: 'DOCKER_USERNAME',
-                    passwordVariable: 'DOCKER_PASSWORD'
-                )]) {
+                withCredentials([
+                    usernamePassword(
+                        credentialsId: 'dockerhub',
+                        usernameVariable: 'DOCKER_USERNAME',
+                        passwordVariable: 'DOCKER_PASSWORD'
+                    )
+                ]) {
 
                     sh '''
                         echo "========================================"
@@ -60,7 +63,7 @@ pipeline {
                         --password-stdin
 
                         echo "========================================"
-                        echo "Pushing Build Image..."
+                        echo "Pushing Versioned Image..."
                         echo "========================================"
 
                         docker push $DOCKER_USERNAME/$IMAGE_NAME:$BUILD_NUMBER
@@ -76,50 +79,68 @@ pipeline {
         }
 
         stage('Deploy to Docker Server') {
-        steps {
-        sh """
-        ssh -o StrictHostKeyChecking=no ${DOCKER_SERVER} '
-            cd ~/DevOps_Project
 
-            echo "========================================"
-            echo "Pulling latest source code..."
-            echo "========================================"
-            git pull origin main
+            steps {
 
-            echo "========================================"
-            echo "Pulling latest Docker image..."
-            echo "========================================"
-            docker compose pull
+                sh """
+                ssh -o StrictHostKeyChecking=no ${DOCKER_SERVER} '
 
-            echo "========================================"
-            echo "Stopping old containers..."
-            echo "========================================"
-            docker compose down
+                    cd ~/DevOps_Project
 
-            echo "========================================"
-            echo "Starting updated containers..."
-            echo "========================================"
-            docker compose up -d
+                    echo "========================================"
+                    echo "Pulling Latest Source Code..."
+                    echo "========================================"
 
-            echo "========================================"
-            echo "Deployment Successful!"
-            echo "========================================"
-        '
-        """
+                    git pull origin main
+
+                    echo "========================================"
+                    echo "Pulling Latest Docker Image..."
+                    echo "========================================"
+
+                    docker compose pull
+
+                    echo "========================================"
+                    echo "Stopping Existing Containers..."
+                    echo "========================================"
+
+                    docker compose down
+
+                    echo "========================================"
+                    echo "Starting Updated Containers..."
+                    echo "========================================"
+
+                    docker compose up -d
+
+                    echo "========================================"
+                    echo "Removing Unused Images..."
+                    echo "========================================"
+
+                    docker image prune -f
+
+                    echo "========================================"
+                    echo "Deployment Successful!"
+                    echo "========================================"
+
+                '
+                """
             }
         }
-
     }
 
     post {
 
         success {
-            echo 'CI/CD Pipeline Completed Successfully!'
+
+            echo "========================================"
+            echo "CI/CD Pipeline Completed Successfully!"
+            echo "========================================"
         }
 
         failure {
-            echo 'CI/CD Pipeline Failed..!!!'
-        }
 
+            echo "========================================"
+            echo "CI/CD Pipeline Failed!"
+            echo "========================================"
+        }
     }
 }
