@@ -1,15 +1,15 @@
 pipeline {
-
     agent any
 
     environment {
-        IMAGE_NAME = "sujal5210/employee-management:latest"
-        SERVER = "vagrant@192.168.56.12"
+        DOCKER_USERNAME = 'sujal5210'
+        IMAGE_NAME = 'employee-management'
+        DOCKER_SERVER = 'vagrant@192.168.56.12'
     }
 
     stages {
 
-        stage('Checkout Source') {
+        stage('Checkout Code') {
             steps {
                 checkout scm
             }
@@ -18,10 +18,9 @@ pipeline {
         stage('Build Maven Project') {
             steps {
                 sh '''
-                echo "======================================"
-                echo "Building Maven Project"
-                echo "======================================"
-
+                echo "========================================"
+                echo "Building Maven Project..."
+                echo "========================================"
                 mvn clean package -DskipTests
                 '''
             }
@@ -30,77 +29,95 @@ pipeline {
         stage('Build Docker Image') {
             steps {
                 sh '''
-                echo "======================================"
-                echo "Building Docker Image"
-                echo "======================================"
+                echo "========================================"
+                echo "Building Docker Image..."
+                echo "========================================"
 
-                docker build -t $IMAGE_NAME .
+                docker build \
+                  -t $DOCKER_USERNAME/$IMAGE_NAME:$BUILD_NUMBER \
+                  -t $DOCKER_USERNAME/$IMAGE_NAME:latest .
                 '''
             }
         }
 
-        stage('Push Docker Image') {
-
+        stage('Login & Push to Docker Hub') {
             steps {
-
-                withCredentials([
-                    usernamePassword(
-                        credentialsId: 'dockerhub',
-                        usernameVariable: 'DOCKER_USERNAME',
-                        passwordVariable: 'DOCKER_PASSWORD'
-                    )
-                ]) {
+                withCredentials([usernamePassword(
+                    credentialsId: 'dockerhub-credentials',
+                    usernameVariable: 'DOCKER_USERNAME',
+                    passwordVariable: 'DOCKER_PASSWORD'
+                )]) {
 
                     sh '''
-                    echo "======================================"
-                    echo "Logging into Docker Hub"
-                    echo "======================================"
+                    echo "========================================"
+                    echo "Logging into Docker Hub..."
+                    echo "========================================"
 
-                    echo "$DOCKER_PASSWORD" | docker login -u "$DOCKER_USERNAME" --password-stdin
+                    echo "$DOCKER_PASSWORD" | docker login \
+                      -u "$DOCKER_USERNAME" \
+                      --password-stdin
 
-                    echo "======================================"
-                    echo "Pushing Docker Image"
-                    echo "======================================"
+                    echo "========================================"
+                    echo "Pushing Versioned Image..."
+                    echo "========================================"
 
-                    docker push $IMAGE_NAME
+                    docker push $DOCKER_USERNAME/$IMAGE_NAME:$BUILD_NUMBER
+
+                    echo "========================================"
+                    echo "Pushing Latest Image..."
+                    echo "========================================"
+
+                    docker push $DOCKER_USERNAME/$IMAGE_NAME:latest
                     '''
                 }
             }
         }
 
-        stage('Deploy to Web02') {
-
+        stage('Deploy to Docker Server') {
             steps {
+                sh """
+                ssh -o StrictHostKeyChecking=no $DOCKER_SERVER << EOF
 
-                sh '''
-                echo "======================================"
-                echo "Deploying Application"
-                echo "======================================"
+                echo "========================================"
+                echo "Checking PostgreSQL..."
+                echo "========================================"
 
-                ssh -o StrictHostKeyChecking=no $SERVER "
-                docker network create employee-network || true
+                docker start postgres || true
 
-                docker start postgres || docker run -d \
-                  --name postgres \
-                  --network employee-network \
-                  -e POSTGRES_DB=employee_db \
-                  -e POSTGRES_USER=postgres \
-                  -e POSTGRES_PASSWORD=postgres \
-                  postgres:17
+                echo "========================================"
+                echo "Pulling Latest Docker Image..."
+                echo "========================================"
 
-                docker pull $IMAGE_NAME
+                docker pull $DOCKER_USERNAME/$IMAGE_NAME:latest
+
+                echo "========================================"
+                echo "Stopping Old Container..."
+                echo "========================================"
 
                 docker stop employee-management || true
 
+                echo "========================================"
+                echo "Removing Old Container..."
+                echo "========================================"
+
                 docker rm employee-management || true
+
+                echo "========================================"
+                echo "Starting New Container..."
+                echo "========================================"
 
                 docker run -d \
                   --name employee-management \
                   --network employee-network \
                   -p 8080:8080 \
-                  $IMAGE_NAME
-                "
-                '''
+                  $DOCKER_USERNAME/$IMAGE_NAME:latest
+
+                echo "========================================"
+                echo "Deployment Successful!"
+                echo "========================================"
+
+                EOF
+                """
             }
         }
     }
@@ -108,30 +125,11 @@ pipeline {
     post {
 
         success {
-
-            echo '''
-=========================================
-Deployment Successful
-=========================================
-'''
+            echo 'CI/CD Pipeline Completed Successfully!'
         }
 
         failure {
-
-            echo '''
-=========================================
-Pipeline Failed
-=========================================
-'''
-        }
-
-        always {
-
-            echo '''
-=========================================
-Pipeline Completed
-=========================================
-'''
+            echo 'CI/CD Pipeline Failed!'
         }
     }
 }
