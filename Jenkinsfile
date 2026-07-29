@@ -18,10 +18,11 @@ pipeline {
         stage('Build Maven Project') {
             steps {
                 sh '''
-                echo "========================================"
-                echo "Building Maven Project..."
-                echo "========================================"
-                mvn clean package -DskipTests
+                    echo "========================================"
+                    echo "Building Maven Project..."
+                    echo "========================================"
+
+                    mvn clean package -DskipTests
                 '''
             }
         }
@@ -29,19 +30,20 @@ pipeline {
         stage('Build Docker Image') {
             steps {
                 sh '''
-                echo "========================================"
-                echo "Building Docker Image..."
-                echo "========================================"
+                    echo "========================================"
+                    echo "Building Docker Image..."
+                    echo "========================================"
 
-                docker build \
-                  -t $DOCKER_USERNAME/$IMAGE_NAME:$BUILD_NUMBER \
-                  -t $DOCKER_USERNAME/$IMAGE_NAME:latest .
+                    docker build \
+                    -t $DOCKER_USERNAME/$IMAGE_NAME:$BUILD_NUMBER \
+                    -t $DOCKER_USERNAME/$IMAGE_NAME:latest .
                 '''
             }
         }
 
         stage('Login & Push to Docker Hub') {
             steps {
+
                 withCredentials([usernamePassword(
                     credentialsId: 'dockerhub',
                     usernameVariable: 'DOCKER_USERNAME',
@@ -49,53 +51,81 @@ pipeline {
                 )]) {
 
                     sh '''
-                    echo "========================================"
-                    echo "Logging into Docker Hub..."
-                    echo "========================================"
+                        echo "========================================"
+                        echo "Logging into Docker Hub..."
+                        echo "========================================"
 
-                    echo "$DOCKER_PASSWORD" | docker login \
-                      -u "$DOCKER_USERNAME" \
-                      --password-stdin
+                        echo "$DOCKER_PASSWORD" | docker login \
+                        -u "$DOCKER_USERNAME" \
+                        --password-stdin
 
-                    echo "========================================"
-                    echo "Pushing Versioned Image..."
-                    echo "========================================"
+                        echo "========================================"
+                        echo "Pushing Build Image..."
+                        echo "========================================"
 
-                    docker push $DOCKER_USERNAME/$IMAGE_NAME:$BUILD_NUMBER
+                        docker push $DOCKER_USERNAME/$IMAGE_NAME:$BUILD_NUMBER
 
-                    echo "========================================"
-                    echo "Pushing Latest Image..."
-                    echo "========================================"
+                        echo "========================================"
+                        echo "Pushing Latest Image..."
+                        echo "========================================"
 
-                    docker push $DOCKER_USERNAME/$IMAGE_NAME:latest
+                        docker push $DOCKER_USERNAME/$IMAGE_NAME:latest
                     '''
                 }
             }
         }
 
         stage('Deploy to Docker Server') {
-        steps {
+            steps {
+
                 sh """
                 ssh -o StrictHostKeyChecking=no ${DOCKER_SERVER} '
-                    docker start postgres || true
 
-                    docker pull ${DOCKER_USERNAME}/${IMAGE_NAME}:latest
+                echo "========================================"
+                echo "Starting PostgreSQL..."
+                echo "========================================"
 
-                    docker stop employee-management || true
-                    docker rm employee-management || true
+                docker start postgres || true
 
-                    docker run -d \
-                    --name employee-management \
-                    --network employee-network \
-                    -p 8080:8080 \
-                    ${DOCKER_USERNAME}/${IMAGE_NAME}:latest
+                echo "========================================"
+                echo "Pulling Latest Image..."
+                echo "========================================"
 
-                    echo Deployment Successful
-                    '
-                    """
-               }
-        }
+                docker pull ${DOCKER_USERNAME}/${IMAGE_NAME}:latest
+
+                echo "========================================"
+                echo "Stopping Old Container..."
+                echo "========================================"
+
+                docker stop employee-management || true
+
+                echo "========================================"
+                echo "Removing Old Container..."
+                echo "========================================"
+
+                docker rm employee-management || true
+
+                echo "========================================"
+                echo "Starting New Container..."
+                echo "========================================"
+
+                docker run -d \
+                  --name employee-management \
+                  --network employee-network \
+                  -p 8080:8080 \
+                  ${DOCKER_USERNAME}/${IMAGE_NAME}:latest
+
+                echo "========================================"
+                echo "Deployment Successful!"
+                echo "========================================"
+
+                '
+                """
             }
+        }
+
+    }
+
     post {
 
         success {
@@ -105,5 +135,6 @@ pipeline {
         failure {
             echo 'CI/CD Pipeline Failed!'
         }
+
     }
 }
