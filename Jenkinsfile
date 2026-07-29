@@ -74,54 +74,28 @@ pipeline {
         }
 
         stage('Deploy to Docker Server') {
-            steps {
+        steps {
                 sh """
-                ssh -o StrictHostKeyChecking=no $DOCKER_SERVER << EOF
+                ssh -o StrictHostKeyChecking=no ${DOCKER_SERVER} '
+                    docker start postgres || true
 
-                echo "========================================"
-                echo "Checking PostgreSQL..."
-                echo "========================================"
+                    docker pull ${DOCKER_USERNAME}/${IMAGE_NAME}:latest
 
-                docker start postgres || true
+                    docker stop employee-management || true
+                    docker rm employee-management || true
 
-                echo "========================================"
-                echo "Pulling Latest Docker Image..."
-                echo "========================================"
+                    docker run -d \
+                    --name employee-management \
+                    --network employee-network \
+                    -p 8080:8080 \
+                    ${DOCKER_USERNAME}/${IMAGE_NAME}:latest
 
-                docker pull $DOCKER_USERNAME/$IMAGE_NAME:latest
-
-                echo "========================================"
-                echo "Stopping Old Container..."
-                echo "========================================"
-
-                docker stop employee-management || true
-
-                echo "========================================"
-                echo "Removing Old Container..."
-                echo "========================================"
-
-                docker rm employee-management || true
-
-                echo "========================================"
-                echo "Starting New Container..."
-                echo "========================================"
-
-                docker run -d \
-                  --name employee-management \
-                  --network employee-network \
-                  -p 8080:8080 \
-                  $DOCKER_USERNAME/$IMAGE_NAME:latest
-
-                echo "========================================"
-                echo "Deployment Successful!"
-                echo "========================================"
-
-                EOF
-                """
-            }
+                    echo Deployment Successful
+                    '
+                    """
+               }
         }
-    }
-
+            }
     post {
 
         success {
