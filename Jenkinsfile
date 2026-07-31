@@ -61,6 +61,23 @@ pipeline {
             }
         }
 
+        stage('Trivy Scan') {
+        steps {
+                sh '''
+                echo "========================================"
+                echo "Scanning Docker Image using Trivy..."
+                echo "========================================"
+
+                trivy image \
+                --timeout 20m \
+                --scanners vuln \
+                --severity HIGH,CRITICAL \
+                --exit-code 1 \
+                $DOCKER_USERNAME/$IMAGE_NAME:latest
+                '''
+                }
+        }
+
         stage('Push Docker Image') {
 
             steps {
