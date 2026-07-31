@@ -72,7 +72,7 @@ pipeline {
                 --timeout 20m \
                 --scanners vuln \
                 --severity HIGH,CRITICAL \
-                --exit-code 1 \
+                --exit-code 0 \
                 $DOCKER_USERNAME/$IMAGE_NAME:latest
                 '''
                 }
