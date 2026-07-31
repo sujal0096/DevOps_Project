@@ -27,6 +27,18 @@ pipeline {
             }
         }
 
+        stage('SonarQube Analysis') {
+        steps {
+            withSonarQubeEnv('SonarQube') {
+                sh '''
+                mvn sonar:sonar \
+                -Dsonar.projectKey=employee-management \
+                -Dsonar.projectName=employee-management
+                '''
+                }
+            }
+        }
+
         stage('Build Docker Image') {
             steps {
                 sh '''
