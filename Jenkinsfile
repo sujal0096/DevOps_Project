@@ -15,14 +15,18 @@ pipeline {
             }
         }
 
-        stage('Build Maven Project') {
+        stage('Build & Upload JAR to Nexus') {
             steps {
                 sh '''
-                    echo "========================================"
-                    echo "Building Spring Boot Project..."
-                    echo "========================================"
+                echo "========================================"
+                echo "Building Maven Project..."
+                echo "========================================"
 
-                    mvn clean package -DskipTests
+                mvn clean deploy -DskipTests
+
+                echo "========================================"
+                echo "JAR Uploaded to Nexus"
+                echo "========================================"
                 '''
             }
         }
