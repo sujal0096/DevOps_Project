@@ -14,7 +14,7 @@
 
     <groupId>com.sujal</groupId>
     <artifactId>employee-management</artifactId>
-    <version>0.0.1-SNAPSHOT</version>
+    <version>0.0.1</version>
 
     <name>employee-management</name>
     <description>Employee Management System using Spring Boot and PostgreSQL</description>
