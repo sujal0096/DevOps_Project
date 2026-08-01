@@ -22,7 +22,9 @@ pipeline {
                 echo "Building Maven Project..."
                 echo "========================================"
 
-                mvn clean deploy -DskipTests
+                mvn clean deploy \
+                -s /var/lib/jenkins/tools/hudson.tasks.Maven_MavenInstallation/MAVEN3.9/conf/settings.xml \
+                -DskipTests
 
                 echo "========================================"
                 echo "JAR Uploaded to Nexus"
