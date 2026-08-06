@@ -20,7 +20,7 @@ spec:
       containers:
       - name: employee-management
 
-        image: sujal5210/employee-management:1
+        image: sujal5210/employee-management:BUILD_NUMBER
 
         imagePullPolicy: Always
 

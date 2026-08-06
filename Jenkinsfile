@@ -194,12 +194,14 @@ pipeline {
                     echo "========================================"
                     echo "Applying Kubernetes Resources..."
                     echo "========================================"
-
+                    sed -i "s/BUILD_NUMBER/${BUILD_NUMBER}/g" deployment.yaml
                     kubectl apply -f .
 
                     echo "========================================"
                     echo "Updating Deployment Image..."
                     echo "========================================"
+
+                    echo "Deploying Image: ${DOCKER_USERNAME}/${IMAGE_NAME}:${BUILD_NUMBER}"
 
                     kubectl set image deployment/employee-management \
                     employee-management=${DOCKER_USERNAME}/${IMAGE_NAME}:${BUILD_NUMBER}
