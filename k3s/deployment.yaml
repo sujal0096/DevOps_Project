@@ -20,7 +20,7 @@ spec:
       containers:
       - name: employee-management
 
-        image: sujal5210/employee-management:latest
+        image: sujal5210/employee-management:1
 
         imagePullPolicy: Always
 

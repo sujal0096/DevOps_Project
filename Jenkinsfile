@@ -171,64 +171,65 @@ pipeline {
 
         stage('Deploy to Kubernetes (k3s)') {
 
-        steps {
+            steps {
 
-            sh """
-            ssh -o StrictHostKeyChecking=no ${K8S_SERVER} '
+                sh """
+                ssh -o StrictHostKeyChecking=no ${K8S_SERVER} '
 
-                cd ~/DevOps_Project
+                    cd ~/DevOps_Project
 
-                echo "========================================"
-                echo "Fetching Latest Source Code..."
-                echo "========================================"
+                    echo "========================================"
+                    echo "Fetching Latest Source Code..."
+                    echo "========================================"
 
-                git fetch origin
-                git reset --hard origin/main
+                    git fetch origin
+                    git reset --hard origin/main
 
-                echo "========================================"
-                echo "Moving to Kubernetes Manifests..."
-                echo "========================================"
+                    echo "========================================"
+                    echo "Moving to Kubernetes Manifests..."
+                    echo "========================================"
 
-                cd k3s
+                    cd k3s
 
-                echo "========================================"
-                echo "Applying Kubernetes Manifests..."
-                echo "========================================"
+                    echo "========================================"
+                    echo "Applying Kubernetes Resources..."
+                    echo "========================================"
 
-                kubectl apply -f .
+                    kubectl apply -f .
 
-                echo "========================================"
-                echo "Restarting Deployment..."
-                echo "========================================"
+                    echo "========================================"
+                    echo "Updating Deployment Image..."
+                    echo "========================================"
 
-                kubectl rollout restart deployment employee-management
+                    kubectl set image deployment/employee-management \
+                    employee-management=${DOCKER_USERNAME}/${IMAGE_NAME}:${BUILD_NUMBER}
 
-                echo "========================================"
-                echo "Waiting for Rollout..."
-                echo "========================================"
+                    echo "========================================"
+                    echo "Waiting for Rolling Update..."
+                    echo "========================================"
 
-                kubectl rollout status deployment employee-management
+                    kubectl rollout status deployment/employee-management
 
-                echo "========================================"
-                echo "Verifying Pods..."
-                echo "========================================"
+                    echo "========================================"
+                    echo "Current Pods"
+                    echo "========================================"
 
-                kubectl get pods
+                    kubectl get pods -o wide
 
-                echo "========================================"
-                echo "Verifying Services..."
-                echo "========================================"
+                    echo "========================================"
+                    echo "Current Services"
+                    echo "========================================"
 
-                kubectl get svc
+                    kubectl get svc
 
-                echo "========================================"
-                echo "Kubernetes Deployment Successful!"
-                echo "========================================"
+                    echo "========================================"
+                    echo "Deployment Successful!"
+                    echo "========================================"
 
-            '
-            """
-                }
+                '
+                """
             }
+        }
     }
 
 
