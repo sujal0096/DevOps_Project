@@ -4,7 +4,7 @@ pipeline {
     environment {
         DOCKER_USERNAME = 'sujal5210'
         IMAGE_NAME = 'employee-management'
-        DOCKER_SERVER = 'vagrant@192.168.56.12'
+        K8S_SERVER = 'vagrant@192.168.56.12'
     }
 
     stages {
@@ -121,7 +121,7 @@ pipeline {
             }
         }
 
-        stage('Deploy to Docker Server') {
+        /*stage('Deploy to Docker Server') {
 
             steps {
 
@@ -167,6 +167,66 @@ pipeline {
                 '
                 """
             }
+        }*/
+    }
+
+    stage('Deploy to Kubernetes (k3s)') {
+        
+    steps {
+
+            sh """
+            ssh -o StrictHostKeyChecking=no ${K8S_SERVER} '
+
+            cd ~/DevOps_Project
+
+            echo "========================================"
+            echo "Pulling Latest Source Code..."
+            echo "========================================"
+
+            git pull origin main
+
+            echo "========================================"
+            echo "Moving to Kubernetes Manifests..."
+            echo "========================================"
+
+            cd k3s
+
+            echo "========================================"
+            echo "Applying Kubernetes Manifests..."
+            echo "========================================"
+
+            kubectl apply -f .
+
+            echo "========================================"
+            echo "Restarting Deployment..."
+            echo "========================================"
+
+            kubectl rollout restart deployment employee-management
+
+            echo "========================================"
+            echo "Waiting for Rollout..."
+            echo "========================================"
+
+            kubectl rollout status deployment employee-management
+
+            echo "========================================"
+            echo "Verifying Pods..."
+            echo "========================================"
+
+            kubectl get pods
+
+            echo "========================================"
+            echo "Verifying Services..."
+            echo "========================================"
+
+            kubectl get svc
+
+            echo "========================================"
+            echo "Kubernetes Deployment Successful!"
+            echo "========================================"
+
+            '
+            """
         }
     }
 
