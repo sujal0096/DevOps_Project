@@ -175,6 +175,7 @@ pipeline {
 
                 sh """
                 ssh -o StrictHostKeyChecking=no ${K8S_SERVER} '
+                    set -e
 
                     cd ~/DevOps_Project
 
@@ -195,7 +196,7 @@ pipeline {
                     echo "Applying Kubernetes Resources..."
                     echo "========================================"
                     sed -i "s/BUILD_NUMBER/${BUILD_NUMBER}/g" deployment.yaml
-                    kubectl apply -f .
+                    sudo kubectl apply -f .
 
                     echo "========================================"
                     echo "Updating Deployment Image..."
@@ -203,26 +204,26 @@ pipeline {
 
                     echo "Deploying Image: ${DOCKER_USERNAME}/${IMAGE_NAME}:${BUILD_NUMBER}"
 
-                    kubectl set image deployment/employee-management \
+                    sudo kubectl set image deployment/employee-management \
                     employee-management=${DOCKER_USERNAME}/${IMAGE_NAME}:${BUILD_NUMBER}
 
                     echo "========================================"
                     echo "Waiting for Rolling Update..."
                     echo "========================================"
 
-                    kubectl rollout status deployment/employee-management
+                    sudo kubectl rollout status deployment/employee-management
 
                     echo "========================================"
                     echo "Current Pods"
                     echo "========================================"
 
-                    kubectl get pods -o wide
+                    sudo kubectl get pods -o wide
 
                     echo "========================================"
                     echo "Current Services"
                     echo "========================================"
 
-                    kubectl get svc
+                    sudo kubectl get svc
 
                     echo "========================================"
                     echo "Deployment Successful!"
